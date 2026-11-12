@@ -31,3 +31,16 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# macOS
+.DS_Store
+
+# Wails / build output
+bin/
+.task/
+frontend/dist/
+frontend/bindings/
+node_modules/
+
+# Playwright MCP output
+.playwright-mcp/
