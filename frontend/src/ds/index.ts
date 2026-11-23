@@ -6,3 +6,5 @@ export { PixelKitten } from "./PixelKitten";
 export { Modal } from "./Modal";
 export { TextInput } from "./TextInput";
 export { Button } from "./Button";
+export { ResizeHandle } from "./ResizeHandle";
+export { Radio } from "./Radio";

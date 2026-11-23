@@ -1,33 +1,22 @@
 import { createSystem, defaultConfig, defineConfig } from "@chakra-ui/react";
 import { panelRecipe } from "./recipes/panel";
 
-/*
- * chaton's design system, built on Chakra v3.
- *
- * Layers:
- *   tokens         → raw values (the palette). PLACEHOLDER: neutral grays plus one
- *                    accent until the real chaton palette exists. Swap them here.
- *   semanticTokens → what components use (bg, fg, border, accent...), each
- *                    declared with themed(terminalValue, modernValue).
- *   recipes        → styled components (see ./recipes).
- *
- * Theme switch: <html data-theme="modern"> activates every `_modern` value.
- * Absent or "terminal" uses the terminal values.
- */
+type Variants = { teletext?: string; modern?: string };
 
-/**
- * A themed value: `terminal` is the default, `modern` applies under
- * data-theme="modern". Chakra's defaults are written as _light/_dark pairs,
- * which beat a plain `base`, so we set all of them.
- */
-const themed = (terminal: string, modern: string = terminal) => ({
-  value: { base: terminal, _light: terminal, _dark: terminal, _modern: modern },
+// Chakra's defaults are _light/_dark pairs that beat a plain `base`, so every condition is set.
+const themed = (terminal: string, { teletext, modern }: Variants = {}) => ({
+  value: {
+    base: terminal,
+    _light: terminal,
+    _dark: terminal,
+    _teletext: teletext ?? terminal,
+    _modern: modern ?? terminal,
+  },
 });
 
 const config = defineConfig({
   conditions: {
-    // Matches when <html> itself has the attribute (that's where the CSS vars live)
-    // or when any ancestor has it.
+    teletext: "&[data-theme=teletext], [data-theme=teletext] &",
     modern: "&[data-theme=modern], [data-theme=modern] &",
   },
 
@@ -38,7 +27,7 @@ const config = defineConfig({
       color: "fg",
       fontFamily: "body",
       fontSize: "sm",
-      overflow: "hidden", // the app is the window; nothing scrolls the page
+      overflow: "hidden",
     },
   },
 
@@ -55,7 +44,17 @@ const config = defineConfig({
           300: { value: "#a1a1aa" },
           100: { value: "#e4e4e7" },
         },
-        signal: { value: "#e0a84f" }, // placeholder accent
+        azure: { value: "#4f9dff" },
+        tele: {
+          black: { value: "#000000" },
+          red: { value: "#ff4d4d" },
+          green: { value: "#a6f04a" },
+          yellow: { value: "#f2f25c" },
+          blue: { value: "#4b3cf0" },
+          magenta: { value: "#f05cf0" },
+          cyan: { value: "#6ee6f0" },
+          white: { value: "#f2f2f2" },
+        },
       },
       fonts: {
         terminal: {
@@ -63,48 +62,78 @@ const config = defineConfig({
             '"CaskaydiaMono Nerd Font", "JetBrainsMono Nerd Font", "JetBrains Mono", "SF Mono", Menlo, monospace',
         },
         system: { value: 'system-ui, -apple-system, "Segoe UI", sans-serif' },
+        teletext: { value: 'Bedstead, "SF Mono", Menlo, monospace' },
       },
     },
 
-    // Chakra's own components read bg / fg / border too, so overriding those
-    // names (instead of inventing new ones) makes them match our theme for free.
     semanticTokens: {
       colors: {
         bg: {
-          DEFAULT: themed("{colors.ink.950}", "{colors.ink.900}"), // behind panes
-          panel: themed("{colors.ink.900}", "{colors.ink.850}"), // pane surface
-          muted: themed("{colors.ink.800}", "{colors.ink.800}"), // hover/selected
+          DEFAULT: themed("{colors.ink.950}", {
+            teletext: "{colors.tele.black}",
+            modern: "{colors.ink.900}",
+          }),
+          panel: themed("{colors.ink.900}", {
+            teletext: "{colors.tele.black}",
+            modern: "{colors.ink.850}",
+          }),
+          muted: themed("{colors.ink.800}", {
+            teletext: "{colors.tele.blue}",
+          }),
         },
         fg: {
-          DEFAULT: themed("{colors.ink.100}"),
-          muted: themed("{colors.ink.500}", "{colors.ink.300}"),
+          DEFAULT: themed("{colors.ink.100}", {
+            teletext: "{colors.tele.white}",
+          }),
+          muted: themed("{colors.ink.500}", {
+            teletext: "{colors.tele.cyan}",
+            modern: "{colors.ink.300}",
+          }),
         },
         border: {
-          DEFAULT: themed("{colors.ink.700}"),
-          active: themed("{colors.signal}", "{colors.ink.500}"),
+          DEFAULT: themed("{colors.ink.700}", {
+            teletext: "{colors.tele.blue}",
+          }),
+          active: themed("{colors.azure}", {
+            teletext: "{colors.tele.green}",
+            modern: "{colors.ink.500}",
+          }),
         },
         accent: {
-          DEFAULT: themed("{colors.signal}"),
-          fg: themed("{colors.ink.950}"),
+          DEFAULT: themed("{colors.azure}", {
+            teletext: "{colors.tele.green}",
+          }),
+          fg: themed("{colors.ink.950}", { teletext: "{colors.tele.black}" }),
         },
         terminal: {
-          bg: themed("{colors.ink.900}", "{colors.ink.950}"),
-          fg: themed("{colors.ink.100}"),
+          bg: themed("{colors.ink.900}", {
+            teletext: "{colors.tele.black}",
+            modern: "{colors.ink.950}",
+          }),
+          fg: themed("{colors.ink.100}", { teletext: "{colors.tele.white}" }),
         },
       },
       fonts: {
-        body: themed("{fonts.terminal}", "{fonts.system}"),
-        heading: themed("{fonts.terminal}", "{fonts.system}"),
+        body: themed("{fonts.terminal}", {
+          teletext: "{fonts.teletext}",
+          modern: "{fonts.system}",
+        }),
+        heading: themed("{fonts.terminal}", {
+          teletext: "{fonts.teletext}",
+          modern: "{fonts.system}",
+        }),
         mono: themed("{fonts.terminal}"),
       },
       radii: {
-        pane: themed("0", "8px"),
+        pane: themed("0", { modern: "8px" }),
       },
       borderWidths: {
-        pane: themed("2px", "1px"),
+        pane: themed("2px", { teletext: "0", modern: "1px" }),
       },
       spacing: {
-        gap: themed("6px"), // between panes, tiling-WM style
+        gap: themed("6px", { teletext: "8px", modern: "8px" }),
+        titleRoom: themed("0.5lh", { teletext: "0px", modern: "0px" }),
+        frame: themed("calc({spacing.gap} + {spacing.titleRoom})"),
       },
     },
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Box, Stack, Text } from "@chakra-ui/react";
 import { BorderButton, ListItem, Panel } from "../ds";
+import { themes, type ThemeName } from "../theme/useTheme";
 
 type SectionId = "skills" | "mcp" | "agents" | "presets" | "general";
 
@@ -32,11 +33,19 @@ const sections: { id: SectionId; label: string; description: string }[] = [
   },
 ];
 
-type SettingsProps = {
-  onClose: () => void;
+const themeDescriptions: Record<ThemeName, string> = {
+  terminal: "tiling-wm panes, titles in the border",
+  teletext: "8 colors, solid bars, page numbers",
+  modern: "rounded panes, system font",
 };
 
-export function Settings({ onClose }: SettingsProps) {
+type SettingsProps = {
+  onClose: () => void;
+  theme: ThemeName;
+  onThemeChange: (theme: ThemeName) => void;
+};
+
+export function Settings({ onClose, theme, onThemeChange }: SettingsProps) {
   const [sectionId, setSectionId] = useState<SectionId>("skills");
   const section = sections.find((s) => s.id === sectionId)!;
 
@@ -70,7 +79,31 @@ export function Settings({ onClose }: SettingsProps) {
 
       <Box display="flex" flex="1" minW={0}>
         <Panel flex="1" title={section.label}>
-          <Text color="fg.muted">{section.description}</Text>
+          <Stack gap="4">
+            <Text color="fg.muted">{section.description}</Text>
+            {sectionId === "general" && (
+              <Stack gap="1.5">
+                <Text color="fg.muted" fontSize="xs">
+                  theme
+                </Text>
+                <Stack gap="0" maxW="480px">
+                  {themes.map((t) => (
+                    <ListItem
+                      key={t}
+                      active={t === theme}
+                      onClick={() => onThemeChange(t)}
+                    >
+                      {t === theme ? "● " : "○ "}
+                      {t.padEnd(10)}
+                      <Text as="span" color="fg.muted" fontSize="xs">
+                        {themeDescriptions[t]}
+                      </Text>
+                    </ListItem>
+                  ))}
+                </Stack>
+              </Stack>
+            )}
+          </Stack>
         </Panel>
       </Box>
     </>

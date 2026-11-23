@@ -1,29 +1,40 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Flex, Stack, Text } from "@chakra-ui/react";
 import { SessionService } from "../../bindings/github.com/hsilvap/chaton";
-import { Button, ListItem, Modal, TextInput } from "../ds";
+import { Button, ListItem, Modal, Radio, TextInput } from "../ds";
 import { basename, tildify } from "../paths";
+import { errorMessage } from "../errors";
+import { PaneKind } from "../layout";
 
 type NewSessionModalProps = {
   open: boolean;
   onClose: () => void;
-  recentDirs: string[];
-  onCreate: (dir: string) => void;
+  onCreate: (path: string, kind: PaneKind) => Promise<void>;
 };
 
-const errorMessage = (err: unknown) =>
-  err instanceof Error ? err.message : String(err);
+const kinds = [
+  { kind: PaneKind.PaneClaude, label: "claude code" },
+  { kind: PaneKind.PaneShell, label: "shell" },
+];
 
 export function NewSessionModal({
   open,
   onClose,
-  recentDirs,
   onCreate,
 }: NewSessionModalProps) {
   const [path, setPath] = useState("");
+  const [kind, setKind] = useState(PaneKind.PaneClaude);
+  const [recentDirs, setRecentDirs] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    SessionService.RecentPaths()
+      .then((paths) => setRecentDirs(paths ?? []))
+      .catch(() => setRecentDirs([]));
+  }, [open]);
 
   const close = () => {
     setPath("");
@@ -34,8 +45,7 @@ export function NewSessionModal({
   const start = async (candidate = path) => {
     setBusy(true);
     try {
-      const dir = await SessionService.ResolveDirectory(candidate);
-      onCreate(dir);
+      await onCreate(candidate, kind);
       close();
     } catch (err) {
       setError(errorMessage(err));
@@ -92,6 +102,25 @@ export function NewSessionModal({
                 {error}
               </Text>
             )}
+          </Stack>
+
+          <Stack gap="1.5">
+            <Text color="fg.muted" fontSize="xs">
+              run
+            </Text>
+            <Flex gap="2" role="radiogroup" aria-label="run">
+              {kinds.map((k) => (
+                <Radio
+                  key={k.kind}
+                  name="kind"
+                  value={k.kind}
+                  checked={kind === k.kind}
+                  onChange={() => setKind(k.kind)}
+                >
+                  {k.label}
+                </Radio>
+              ))}
+            </Flex>
           </Stack>
 
           {recentDirs.length > 0 && (

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chaton.dev/schemas/layout/0-0-1.json",
+  "title": "Layout",
+  "description": "Properties of a working environment layout",
+  "type": "object",
+  "properties": {
+    "path": {
+      "description": "path where the instance is running",
+      "type": "string",
+      "minLength": 1
+    },
+    "split": {
+      "description": "every pane in the session is split the same way",
+      "enum": ["horizontal", "vertical"]
+    },
+    "sizes": {
+      "description": "size of each open pane, in the same order as the open panes",
+      "type": "array",
+      "items": { "type": "number", "exclusiveMinimum": 0 }
+    },
+    "panes": {
+      "description": "panes per session, closed ones are kept",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": { "enum": ["claude", "shell"] },
+          "created_at": { "description": "epoch ms", "type": "integer" },
+          "closed_at": { "description": "epoch ms", "type": "integer" },
+          "active": { "type": "boolean" }
+        },
+        "required": ["kind", "created_at", "active"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["path", "split", "sizes", "panes"],
+  "additionalProperties": false
+}

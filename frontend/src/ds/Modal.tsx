@@ -39,7 +39,7 @@ export function Modal({
             borderRadius="0"
             w={width}
             maxW="calc(100vw - 32px)"
-            pt="0.5lh"
+            pt="titleRoom"
           >
             <Panel
               title={

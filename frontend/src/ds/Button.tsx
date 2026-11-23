@@ -4,7 +4,7 @@ export const Button = chakra("button", {
   base: {
     px: "3",
     py: "1.5",
-    fontFamily: "mono",
+    fontFamily: "body",
     lineHeight: "1",
     whiteSpace: "nowrap",
     cursor: "pointer",

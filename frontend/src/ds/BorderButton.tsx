@@ -7,5 +7,10 @@ export const BorderButton = chakra("button", {
     lineHeight: "1",
     _hover: { color: "accent" },
     _focusVisible: { color: "accent", outline: "none" },
+    _teletext: {
+      color: "inherit",
+      _hover: { bg: "fg", color: "bg" },
+      _focusVisible: { bg: "fg", color: "bg" },
+    },
   },
 });

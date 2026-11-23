@@ -12,10 +12,21 @@ export const ListItem = chakra("button", {
     color: "fg",
     _hover: { bg: "bg.muted" },
     _focusVisible: { bg: "bg.muted", outline: "none" },
+    _modern: { borderRadius: "md" },
   },
   variants: {
     active: {
-      true: { bg: "bg.muted", color: "accent" },
+      true: {
+        bg: "bg.muted",
+        color: "accent",
+        _teletext: {
+          bg: "accent",
+          color: "accent.fg",
+          "--chakra-colors-fg-muted": "{colors.accent.fg}",
+          _hover: { bg: "accent" },
+        },
+        _modern: { color: "fg" },
+      },
       false: {},
     },
   },

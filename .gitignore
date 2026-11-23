@@ -44,3 +44,5 @@ node_modules/
 
 # Playwright MCP output
 .playwright-mcp/
+
+docs/specs/*

@@ -21,7 +21,7 @@ It's also a **learning project**. The owner is experienced in TypeScript and is 
 
 - **Go + Wails v3** (`github.com/wailsapp/wails/v3`) for the backend and native window
 - **React + TypeScript + Vite + Chakra UI v3** in `frontend/`
-- Planned: `creack/pty` for spawning agents, xterm.js for rendering terminals
+- `creack/pty` for spawning processes, xterm.js (`@xterm/xterm` + `@xterm/addon-fit`) for rendering them
 
 ## Commands
 
@@ -33,7 +33,7 @@ go test ./...     # Go tests; single test: go test ./internal/<pkg> -run TestNam
 cd frontend && npx tsc --noEmit   # typecheck frontend
 ```
 
-There's no linter or test suite set up yet.
+There's no linter yet.
 
 Wails v3 template names differ from v2. `react` is already React + TS, and there's no `react-ts`. An unknown `-t` value is treated as a remote git URL, which produces a confusing "invalid remote git URL" error.
 
@@ -48,15 +48,31 @@ Wails v3 template names differ from v2. `react` is already React + TS, and there
   - The root `Taskfile.yml` dispatches to `build/<os>/Taskfile.yml` based on `GOOS`, and `build/Taskfile.yml` holds the shared tasks (frontend install and build, bindings, icons).
   - App metadata lives in `build/config.yml`. `wails3 task common:update:build-assets` regenerates the plists and manifests from it, overwriting any manual edits.
   - The mobile, Docker and server-mode targets were deliberately removed. Only darwin, linux and windows remain.
-- Planned Go layout: `internal/` packages for PTY spawning, session management and state detection.
+- **Storage** (`internal/store`): SQLite via `modernc.org/sqlite` (pure Go, no cgo), at `os.UserConfigDir()/chaton/chaton.db`.
+  - Migrations are goose files in `internal/store/migrations/`, embedded and run on `Open`. Never edit a shipped migration; add a new one.
+  - Queries are written in `internal/store/queries.sql`, and sqlc generates `db.go`, `models.go` and `queries.sql.go` from them (don't edit those by hand). Commands for regenerating and inspecting the DB are in `docs/db/commands.md`.
+  - `store.go` is the hand-written wrapper: transactions, IDs (uuidv7), timestamps (epoch ms) and layout validation.
+  - Session layouts are JSON validated against `schemas/layout-schema-<version>.json` (embedded by the `schemas` package). A breaking layout change means a new schema file and version, not editing the old one.
+- **Terminals** (`internal/pty`, `terminalservice.go`, `frontend/src/components/TerminalView.tsx`):
+  - Each open pane has one process keyed by pane id: `$SHELL -l`, or `claude` run through `$SHELL -l -c` so the user's PATH loads.
+  - Output streams as the `pty:output` event (bytes, base64 over JSON) and exits as `pty:exit`; input, resize and kill are `TerminalService` calls.
+  - `Start` is idempotent, so a remounting xterm reattaches instead of spawning twice. Processes outlive React unmounts; only closing a pane/session (after `Busy` + confirm) or quitting kills them.
+  - claude panes use `--session-id <uuid>` the first time and `--resume <uuid>` once a transcript exists in `~/.claude/projects/*/<uuid>.jsonl`.
+  - Keys: ⌥ is Meta (`macOptionIsMeta`). Cmd chords, which xterm.js would drop, are encoded as kitty-protocol CSI u with the super modifier (`frontend/src/keys.ts`), so nvim sees `<D-…>`. Cmd+C/V/Q/H/M stay with the app.
+  - Not supported on Windows yet (`pty_windows.go` is a stub).
+- Planned: `internal/` package for state detection (Claude Code hooks).
 
 ## UI direction
 
-- **The default look is terminal / tiling-WM, Omarchy-style.** Monospace everywhere, flat (no shadows or gradients), thin borders, gaps between panes, pane titles sitting in the top border (lazygit / btop style), and the focused pane gets the accent border. **Not** Win95/classic-desktop retro, which was tried and rejected. There's also a switchable **modern** theme.
-- **The palette is a placeholder** (neutral `ink` grays plus one `signal` accent). The owner will design chaton's own palette, so don't copy an existing theme like Tokyo Night or Catppuccin.
+- **Three themes**, switched via `<html data-theme="terminal|teletext|modern">` (`frontend/src/theme/useTheme.ts`, saved in the `settings` table with localStorage as a startup cache, picked in settings → general):
+  - **terminal**: tiling-WM / Omarchy-style. Monospace, flat, thin borders, gaps, pane titles sitting in the top border, and the focused pane gets the accent border.
+  - **teletext**: Ceefax/Televideo-inspired. 8 loud colors (`tele.*` tokens), solid title bars instead of borders (lime when focused), Bedstead pixel font (CC0, `frontend/public/fonts/`), sessions numbered as pages (`src/pages.ts`) and a header row with page number and clock. Terminal content keeps the readable mono font. **Not** Win95/classic-desktop retro, which was tried and rejected.
+  - **modern** (default): generic harness look (rounded panes, system font, blue accent).
+- **The palette is a placeholder.** The owner will design chaton's own palette, so don't copy an existing theme like Tokyo Night or Catppuccin.
 - **Styling is Chakra UI v3**, via the system in `frontend/src/theme/`. Use style props, tokens and recipes, not CSS files.
-  - Every semantic token is declared with `themed(terminal, modern)`. Chakra's defaults are `_light`/`_dark` pairs that beat a plain `base`, which is why that helper exists.
-  - `<html data-theme="modern">` switches theme, using the custom `_modern` condition. `<html class="dark">` stays on so Chakra's built-in components render dark.
+  - Every semantic token is declared with `themed(terminal, { teletext, modern })`. Chakra's defaults are `_light`/`_dark` pairs that beat a plain `base`, which is why that helper exists. `<html class="dark">` stays on so Chakra's built-in components render dark.
+  - Theme-specific styles use the custom `_teletext` / `_modern` conditions. After changing conditions or tokens, run `npm run typegen` (it also runs on postinstall) so the TS types know about them. When nesting with a group condition, put the theme condition **inside**: `_groupFocusWithin: { _teletext: ... }`. The reverse order generates a selector that never matches.
+  - Style props on a child beat a component's recipe styles (higher CSS layer). To recolor descendants, override the token's CSS var on the parent (e.g. `"--chakra-colors-fg-muted"`).
   - Semantic tokens reuse Chakra's names (`bg`, `bg.panel`, `fg`, `fg.muted`, `border`) plus our own (`border.active`, `accent`, `terminal.*`), so Chakra components match the theme automatically.
   - Reusable, app-agnostic components live in `frontend/src/ds/` and are imported from `"../ds"`. App-specific components go in `frontend/src/components/`. Their styles are either a `chakra("el", {...})` style config (simple, no slots) or a slot recipe in `theme/recipes/` wired up with `createSlotRecipeContext` (multi-part with variants, like `Panel`, the base primitive for any bordered pane, with variant `surface: panel | terminal`).
 - **We'll have our own design system. Do NOT use shadcn/ui** or anything that produces the generic shadcn look. Chakra UI v3 is acceptable if a component library is needed, but prefer our own components.
