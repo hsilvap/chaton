@@ -46,3 +46,6 @@ node_modules/
 .playwright-mcp/
 
 docs/specs/*
+
+# Licensed art that may not be redistributed (elthen.itch.io cat sprites); keep a local copy
+frontend/public/sprites/
