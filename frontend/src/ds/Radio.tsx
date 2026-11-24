@@ -22,6 +22,14 @@ const Label = chakra("label", {
         "--chakra-colors-fg-muted": "{colors.accent.fg}",
       },
       _modern: { color: "fg" },
+      _psx: {
+        bg: "transparent",
+        bgImage:
+          "linear-gradient(90deg, color-mix(in srgb, {colors.accent} 42%, transparent), transparent 85%)",
+        color: "fg",
+        textShadow: "0 0 8px {colors.accent}",
+        animation: "psxFlicker 5s steps(1) infinite",
+      },
     },
   },
 });

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState } from "react";
 
-export const themes = ["terminal", "teletext", "modern"] as const;
+export const themes = ["terminal", "teletext", "psx", "modern"] as const;
 export type ThemeName = (typeof themes)[number];
 
 const storageKey = "chaton.theme";

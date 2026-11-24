@@ -12,5 +12,9 @@ export const BorderButton = chakra("button", {
       _hover: { bg: "fg", color: "bg" },
       _focusVisible: { bg: "fg", color: "bg" },
     },
+    _psx: {
+      _hover: { color: "fg", textShadow: "0 0 6px {colors.accent}" },
+      _focusVisible: { color: "fg", textShadow: "0 0 6px {colors.accent}" },
+    },
   },
 });

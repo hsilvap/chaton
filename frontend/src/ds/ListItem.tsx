@@ -25,6 +25,14 @@ export const ListItem = chakra("button", {
           "--chakra-colors-fg-muted": "{colors.accent.fg}",
           _hover: { bg: "accent" },
         },
+        _psx: {
+          bg: "transparent",
+          bgImage:
+            "linear-gradient(90deg, color-mix(in srgb, {colors.accent} 42%, transparent), transparent 85%)",
+          color: "fg",
+          textShadow: "0 0 8px {colors.accent}",
+          animation: "psxFlicker 5s steps(1) infinite",
+        },
         _modern: { color: "fg" },
       },
       false: {},

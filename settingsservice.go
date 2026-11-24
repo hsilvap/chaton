@@ -8,7 +8,7 @@ import (
 	"github.com/hsilvap/chaton/internal/store"
 )
 
-var themes = []string{"terminal", "teletext", "modern"}
+var themes = []string{"terminal", "teletext", "psx", "modern"}
 
 type Settings struct {
 	Theme string `json:"theme"`
